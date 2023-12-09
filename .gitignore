@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# Don't commit input files - https://adventofcode.com/2023/about
+inputs/
