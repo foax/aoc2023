@@ -14,7 +14,7 @@ type Game struct {
 	Draws []Draw
 }
 
-func parseGameLine(logger *slog.Logger, line string) *Game {
+func parseGameLine(line string) *Game {
 	game := Game{}
 	fields := strings.Split(line, ": ")
 	gameIdFields := strings.Fields(fields[0])
@@ -32,13 +32,13 @@ func parseGameLine(logger *slog.Logger, line string) *Game {
 		}
 		game.Draws = append(game.Draws, draw)
 	}
-	logger.Debug("parseGameLine", "line", line, "game", game)
+	slog.Debug("parseGameLine", "line", line, "game", game)
 	return &game
 }
 
-func parseGameInput(logger *slog.Logger, input []string) (games []*Game) {
+func parseGameInput(input []string) (games []*Game) {
 	for _, line := range input {
-		games = append(games, parseGameLine(logger, line))
+		games = append(games, parseGameLine(line))
 	}
 	return
 }
@@ -67,7 +67,7 @@ func minCubes(game *Game) (red int, green int, blue int) {
 	return
 }
 
-func part1Handler(logger *slog.Logger, games []*Game) (total int) {
+func part1Handler(games []*Game) (total int) {
 	for _, game := range games {
 		if checkGame(game, 12, 13, 14) {
 			total += game.Id
@@ -76,29 +76,29 @@ func part1Handler(logger *slog.Logger, games []*Game) (total int) {
 	return
 }
 
-func part2Handler(logger *slog.Logger, games []*Game) (total int) {
+func part2Handler(games []*Game) (total int) {
 	for _, game := range games {
 		r, g, b := minCubes(game)
-		logger.Debug("part2Handler", "game", game, "minRed", r, "minGreen", g, "minBlue", b, "power", r*g*b)
+		slog.Debug("part2Handler", "game", game, "minRed", r, "minGreen", g, "minBlue", b, "power", r*g*b)
 		total += r * g * b
 	}
 	return
 }
 
-func readInput(logger *slog.Logger, scanner *bufio.Scanner) (output []string) {
+func readInput(scanner *bufio.Scanner) (output []string) {
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		output = append(output, scanner.Text())
 	}
-	logger.Debug("Lines of input read", "lines", len(output))
+	slog.Debug("Lines of input read", "lines", len(output))
 	return
 }
 
-func Execute(logger *slog.Logger, scanner *bufio.Scanner) {
-	input := readInput(logger, scanner)
-	games := parseGameInput(logger, input)
-	part1Total := part1Handler(logger, games)
-	part2Total := part2Handler(logger, games)
-	logger.Info("Part 1", "result", part1Total)
-	logger.Info("Part 2", "result", part2Total)
+func Execute(scanner *bufio.Scanner) {
+	input := readInput(scanner)
+	games := parseGameInput(input)
+	part1Total := part1Handler(games)
+	part2Total := part2Handler(games)
+	slog.Info("Part 1", "result", part1Total)
+	slog.Info("Part 2", "result", part2Total)
 }
