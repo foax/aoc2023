@@ -8,7 +8,8 @@ import (
 	"github.com/foax/aoc2023/internal/util"
 )
 
-func findStart(grid []string) [2]int {
+// Find the location of the start of the loop, indicated by S.
+func findStart(grid [][]rune) [2]int {
 	for i, line := range grid {
 		for j, pipe := range line {
 			if pipe == 'S' {
@@ -19,6 +20,7 @@ func findStart(grid []string) [2]int {
 	return [2]int{-1, -1}
 }
 
+// Create a blank grid of given size
 func initGrid(x int, y int) [][]rune {
 	grid := make([][]rune, x)
 	for i := range grid {
@@ -30,28 +32,41 @@ func initGrid(x int, y int) [][]rune {
 	return grid
 }
 
-func loopLength(grid []string, start [2]int) (int, [][]rune) {
+// Get the value of the neighbour pipe offseted from pos by delta
+func gridNeighbour(grid [][]rune, pos [2]int, delta [2]int) rune {
+	var check [2]int = [2]int{pos[0] + delta[0], pos[1] + delta[1]}
+	if check[0] < 0 || check[0] >= len(grid) || check[1] < 0 || check[1] >= len(grid[0]) {
+		return 'O'
+	}
+	return grid[check[0]][check[1]]
+}
+
+// Find the length the pipe loop
+func loopLength(grid [][]rune, start [2]int) (int, [][]rune) {
 	slog.Debug("loopLength", "grid", grid)
 	var oldLoc, pipeLoc [2]int
+
+	// pipes to check for valid outbounds from start: up, right, down, left
+	var deltas [4][2]int = [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
+
+	// valid starting pipes per delta
 	var startingPipes [4][3]rune = [4][3]rune{
 		{'|', '7', 'F'},
 		{'-', '7', 'J'},
 		{'|', 'J', 'L'},
 		{'-', 'F', 'L'},
 	}
+
 	loopGrid := initGrid(len(grid), len(grid[0]))
 	loopGrid[start[0]][start[1]] = 'S'
 	length := 1
 Loop:
-	for i, delta := range [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}} {
+	for i, delta := range deltas {
 		pipeLoc = [2]int{start[0] + delta[0], start[1] + delta[1]}
-		slog.Debug("loopLength", "i", i, "delta", delta, "pipeLoc", pipeLoc)
-		if pipeLoc[0] < 0 || pipeLoc[0] >= len(grid) || pipeLoc[1] < 0 || pipeLoc[1] >= len(grid[pipeLoc[0]]) {
-			continue
-		}
+		neighbour := gridNeighbour(grid, start, delta)
 		for _, p := range startingPipes[i] {
 			slog.Debug("loopLength", "p", string(p))
-			if p == rune(grid[pipeLoc[0]][pipeLoc[1]]) {
+			if p == neighbour {
 				oldLoc = start
 				break Loop
 			}
@@ -59,6 +74,7 @@ Loop:
 	}
 	loopGrid[pipeLoc[0]][pipeLoc[1]] = rune(grid[pipeLoc[0]][pipeLoc[1]])
 
+	// Follow the loop
 	for pipeLoc != start {
 		tmpLoc := pipeLoc
 		switch rune(grid[pipeLoc[0]][pipeLoc[1]]) {
@@ -106,14 +122,6 @@ Loop:
 	return length, loopGrid
 }
 
-func gridNeighbour(grid [][]rune, pos [2]int, delta [2]int) rune {
-	var check [2]int = [2]int{pos[0] + delta[0], pos[1] + delta[1]}
-	if check[0] < 0 || check[0] >= len(grid) || check[1] < 0 || check[1] >= len(grid[0]) {
-		return 'O'
-	}
-	return grid[check[0]][check[1]]
-}
-
 // expand a grid so it's easier to detect areas enclosed by the loop
 func expandGrid(grid [][]rune) [][]rune {
 	expandedGrid := initGrid(len(grid)*2-1, len(grid[0])*2-1)
@@ -126,12 +134,14 @@ func expandGrid(grid [][]rune) [][]rune {
 				break
 			}
 			right := gridNeighbour(grid, [2]int{i, j}, [2]int{0, 1})
-			if (pipe == '-' || pipe == 'L' || pipe == 'F' || pipe == 'S') && (right == '-' || right == '7' || right == 'J' || right == 'S') {
+			if (pipe == '-' || pipe == 'L' || pipe == 'F' || pipe == 'S') &&
+				(right == '-' || right == '7' || right == 'J' || right == 'S') {
 				expandedGrid[i*2][j*2+1] = '-'
 			}
 		}
 	}
 
+	// now fill in the gaps on the new (odd) lines
 	for i, line := range expandedGrid {
 		if i%2 == 0 {
 			continue
@@ -139,22 +149,25 @@ func expandGrid(grid [][]rune) [][]rune {
 		for j := range line {
 			above := gridNeighbour(expandedGrid, [2]int{i, j}, [2]int{-1, 0})
 			below := gridNeighbour(expandedGrid, [2]int{i, j}, [2]int{1, 0})
-			if (above == '|' || above == 'F' || above == '7' || above == 'S') && (below == '|' || below == 'L' || below == 'J' || below == 'S') {
+			if (above == '|' || above == 'F' || above == '7' || above == 'S') &&
+				(below == '|' || below == 'L' || below == 'J' || below == 'S') {
 				expandedGrid[i][j] = '|'
 			}
 		}
 	}
 
-	//
 	return expandedGrid
 }
 
+// Find all the pipes that are outside the loop and mark them with 'O'
 func findOutsidePipes(grid [][]rune) {
 	for i, line := range grid {
 		for j := range line {
 			if grid[i][j] != '.' {
 				continue
 			}
+			// check neighbours up, right, down, left if they are either already marked
+			// as outside pipes, or they happen to be outside the grid (which is also 'O')
 			for _, delta := range [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}} {
 				y := gridNeighbour(grid, [2]int{i, j}, delta)
 				if y == 'O' {
@@ -165,6 +178,7 @@ func findOutsidePipes(grid [][]rune) {
 	}
 }
 
+// marks a pipe as outside, as well as any neighbours that are empty ('.')
 func markOutsidePipe(grid [][]rune, pos [2]int) {
 	grid[pos[0]][pos[1]] = 'O'
 	for _, delta := range [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}} {
@@ -176,6 +190,8 @@ func markOutsidePipe(grid [][]rune, pos [2]int) {
 	}
 }
 
+// counts how many pipes are inside the loop. This will be any group of 2x2 '.'s.
+// mark these as 'I' for visual effect if the grid is printed (handy for debugging)
 func countInsidePipes(grid [][]rune) (total int) {
 	for i, line := range grid {
 		for j, pipe := range line {
@@ -190,6 +206,7 @@ func countInsidePipes(grid [][]rune) (total int) {
 					break
 				}
 			}
+
 			if fourDots {
 				for _, delta := range [4][2]int{{0, 0}, {0, 1}, {1, 1}, {1, 0}} {
 					grid[i+delta[0]][j+delta[1]] = 'I'
@@ -201,37 +218,48 @@ func countInsidePipes(grid [][]rune) (total int) {
 	return total
 }
 
-func part1Handler(grid []string) int {
+func printGrid(grid [][]rune) {
+	for _, line := range grid {
+		fmt.Println(string(line))
+	}
+	fmt.Println()
+}
+
+func part1Handler(grid [][]rune) int {
 	length, _ := loopLength(grid, findStart(grid))
 	return length / 2
 }
 
-func part2Handler(grid []string) int {
+func part2Handler(grid [][]rune) int {
 	_, loopGrid := loopLength(grid, findStart(grid))
-	for _, line := range loopGrid {
-		fmt.Println(string(line))
-	}
+	printGrid(loopGrid)
 	fmt.Println()
+
 	expandedGrid := expandGrid(loopGrid)
-	for _, line := range expandedGrid {
-		fmt.Println(string(line))
-	}
+	printGrid(expandedGrid)
+	fmt.Println()
 
 	findOutsidePipes(expandedGrid)
-	for _, line := range expandedGrid {
-		fmt.Println(string(line))
-	}
+	printGrid(expandedGrid)
+	fmt.Println()
 
 	total := countInsidePipes(expandedGrid)
-	for _, line := range expandedGrid {
-		fmt.Println(string(line))
-	}
+	printGrid(expandedGrid)
+	fmt.Println()
+
 	return total
 }
 
 func Execute(scanner *bufio.Scanner) {
 	input := util.ReadInput(scanner)
-	// part1Total := part1Handler(input)
-	part2Total := part2Handler(input)
-	slog.Info("Results", "part2", part2Total)
+	grid := initGrid(len(input), len(input[0]))
+	for i, line := range input {
+		for j, pipe := range line {
+			grid[i][j] = pipe
+		}
+	}
+
+	part1Total := part1Handler(grid)
+	part2Total := part2Handler(grid)
+	slog.Info("Results", "part1", part1Total, "part2", part2Total)
 }
