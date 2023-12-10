@@ -8,17 +8,22 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+	slog.SetDefault(logger)
+	m.Run()
+}
+
 func TestPart1Handler(t *testing.T) {
 	inputString := `1abc2
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet`
 
-	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	reader := strings.NewReader(inputString)
-	input := readInput(logger, bufio.NewScanner(reader))
+	input := readInput(bufio.NewScanner(reader))
 	want := 142
-	got := part1Handler(logger, input)
+	got := part1Handler(input)
 	if got != want {
 		t.Fatalf("part1Handler failed; wanted %d, got %d\n", want, got)
 	}
@@ -34,11 +39,10 @@ zoneight234
 7pqrstsixteen
 `
 
-	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	reader := strings.NewReader(inputString)
-	input := readInput(logger, bufio.NewScanner(reader))
+	input := readInput(bufio.NewScanner(reader))
 	want := 281
-	got := part2Handler(logger, input)
+	got := part2Handler(input)
 	if got != want {
 		t.Fatalf("part2Handler failed; wanted %d, got %d\n", want, got)
 	}

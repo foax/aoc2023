@@ -32,10 +32,11 @@ func Execute() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: logLevel,
 	}))
+	slog.SetDefault(logger)
 
-	logger.Info("Start", "loglevel", logLevel)
-	defer logger.Info("End")
-	logger.Debug("flag args", "args", flag.Args())
+	slog.Info("Start", "loglevel", logLevel)
+	defer slog.Info("End")
+	slog.Debug("flag args", "args", flag.Args())
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -46,11 +47,11 @@ func Execute() {
 	}
 	switch args[0] {
 	case "day01":
-		day01.Execute(logger, scanner)
+		day01.Execute(scanner)
 	case "day02":
-		day02.Execute(logger, scanner)
+		day02.Execute(scanner)
 	default:
-		logger.Error("Invalid argument", "arg", args[0])
+		slog.Error("Invalid argument", "arg", args[0])
 
 	}
 
