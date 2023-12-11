@@ -13,3 +13,11 @@ func ReadInput(scanner *bufio.Scanner) (output []string) {
 	slog.Debug("Lines of input read", "lines", len(output))
 	return
 }
+
+func IntAbs(x int) int {
+	if x < 0 {
+		return -x
+	} else {
+		return x
+	}
+}
