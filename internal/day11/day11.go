@@ -14,8 +14,8 @@ type galaxy struct {
 	emptyFactor int
 }
 
-func loadGalaxy(input []string, f int) galaxy {
-	g := galaxy{emptyFactor: f}
+func (g *galaxy) Load(input []string, f int) {
+	g.emptyFactor = f
 	g.emptyRow = make(map[int]bool)
 	g.emptyCol = make(map[int]bool)
 
@@ -41,12 +41,10 @@ func loadGalaxy(input []string, f int) galaxy {
 			g.emptyCol[j] = true
 		}
 	}
-	return g
 }
 
-func galaxySteps(g galaxy, x, y [2]int) int {
-
-	steps := util.IntAbs(x[0]-y[0]) + util.IntAbs(x[1]-y[1])
+func (g *galaxy) Steps(a, b [2]int) int {
+	steps := util.IntAbs(a[0]-b[0]) + util.IntAbs(a[1]-b[1])
 	for _, data := range []struct {
 		idx   int
 		empty map[int]bool
@@ -56,30 +54,30 @@ func galaxySteps(g galaxy, x, y [2]int) int {
 	} {
 
 		step := 0
-		if x[data.idx] > y[data.idx] {
+		if a[data.idx] > b[data.idx] {
 			step = -1
-		} else if x[data.idx] < y[data.idx] {
+		} else if a[data.idx] < b[data.idx] {
 			step = 1
 		} else {
 			step = 0
 		}
 
-		for a := x[data.idx] + step; a != y[data.idx]; a += step {
-			if data.empty[a] {
+		for x := a[data.idx] + step; x != b[data.idx]; x += step {
+			if data.empty[x] {
 				steps += g.emptyFactor - 1
 			}
 		}
 	}
 	return steps
-
 }
 
 func partHandler(input []string, f int) int {
-	g := loadGalaxy(input, f)
+	g := galaxy{}
+	g.Load(input, f)
 	total := 0
-	for i, x := range g.coords {
-		for _, y := range g.coords[i+1:] {
-			steps := galaxySteps(g, x, y)
+	for i, a := range g.coords {
+		for _, b := range g.coords[i+1:] {
+			steps := g.Steps(a, b)
 			total += steps
 		}
 	}
