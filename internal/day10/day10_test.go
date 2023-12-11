@@ -2,45 +2,80 @@ package day10
 
 import (
 	"bufio"
-	"strings"
+	"log"
+	"os"
+	"path/filepath"
 	"testing"
-
-	"github.com/foax/aoc2023/internal/util"
 )
 
-var inputString string = `7-F7-
-.FJ|7
-SJLL7
-|F--J
-LJ.LJ`
+func readInputFile(id string) (grid [][]rune) {
+	file, err := os.Open(filepath.Join("testdata", id+".txt"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		grid = append(grid, []rune(scanner.Text()))
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return
+}
 
 func TestFindStart(t *testing.T) {
-	reader := strings.NewReader(inputString)
-	input := util.ReadInput(bufio.NewScanner(reader))
-	grid := initGrid(len(input), len(input[0]))
-	for i, line := range input {
-		for j, pipe := range line {
-			grid[i][j] = pipe
-		}
+	cases := []struct {
+		id   string
+		grid [][]rune
+		want [2]int
+	}{
+		{id: "test_input_1", want: [2]int{1, 1}},
+		{id: "test_input_2", want: [2]int{2, 0}},
+		{id: "test_input_3", want: [2]int{1, 1}},
+		{id: "test_input_4", want: [2]int{4, 12}},
+		{id: "test_input_5", want: [2]int{0, 4}},
 	}
-	want := [2]int{2, 0}
-	got := findStart(grid)
-	if want != got {
-		t.Errorf("findStart failed: wanted %v, got %v", want, got)
+
+	for idx := range cases {
+		cases[idx].grid = readInputFile(cases[idx].id)
+	}
+
+	for _, c := range cases {
+		t.Run(c.id, func(t *testing.T) {
+			got := findStart(c.grid)
+			if c.want != got {
+				t.Errorf("Expected %v, got %v", c.want, got)
+			}
+		})
 	}
 }
 
 func TestLoopLength(t *testing.T) {
-	input := []string{"7-F7-", ".FJ|7", "SJLL7", "|F--J", "LJ.LJ"}
-	grid := initGrid(len(input), len(input[0]))
-	for i, line := range input {
-		for j, pipe := range line {
-			grid[i][j] = pipe
-		}
+	cases := []struct {
+		id   string
+		grid [][]rune
+		want int
+	}{
+		{id: "test_input_1", want: 8},
+		{id: "test_input_2", want: 16},
+		{id: "test_input_3", want: 46},
+		{id: "test_input_4", want: 140},
+		{id: "test_input_5", want: 160},
 	}
-	want := 16
-	got, _ := loopLength(grid, [2]int{2, 0})
-	if want != got {
-		t.Errorf("findStart failed: wanted %v, got %v", want, got)
+
+	for idx := range cases {
+		cases[idx].grid = readInputFile(cases[idx].id)
+	}
+
+	for _, c := range cases {
+		t.Run(c.id, func(t *testing.T) {
+			got, _ := loopLength(c.grid, findStart(c.grid))
+			if c.want != got {
+				t.Errorf("Expected %v, got %v", c.want, got)
+			}
+		})
 	}
 }
