@@ -13,6 +13,7 @@ import (
 	"github.com/foax/aoc2023/internal/day09"
 	"github.com/foax/aoc2023/internal/day10"
 	"github.com/foax/aoc2023/internal/day11"
+	"github.com/foax/aoc2023/internal/day12"
 )
 
 func Execute() {
@@ -59,6 +60,8 @@ func Execute() {
 		day10.Execute(scanner)
 	case "day11":
 		day11.Execute(scanner)
+	case "day12":
+		day12.Execute(scanner)
 	default:
 		slog.Error("Invalid argument", "arg", args[0])
 

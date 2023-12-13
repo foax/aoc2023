@@ -21,3 +21,10 @@ func IntAbs(x int) int {
 		return x
 	}
 }
+
+func SliceSum(x []int) (sum int) {
+	for _, y := range x {
+		sum += y
+	}
+	return
+}
