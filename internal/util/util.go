@@ -28,3 +28,10 @@ func SliceSum(x []int) (sum int) {
 	}
 	return
 }
+
+func SumOfDescendingSequence(start, length int) int {
+	// Formula to calculate sum of a descending sequence
+	// Sum = n * (n + 1) / 2
+	sum := (2*start + (length-1)*(-1)) * length / 2
+	return sum
+}
