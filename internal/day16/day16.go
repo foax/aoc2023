@@ -8,6 +8,13 @@ import (
 	"github.com/foax/aoc2023/internal/util"
 )
 
+const (
+	UP = iota
+	RIGHT
+	DOWN
+	LEFT
+)
+
 type Tile struct {
 	tileType rune
 	beamed   [4]bool
@@ -26,19 +33,18 @@ func Load(input []string) (l LightContraption) {
 	return l
 }
 
-func AdjustVector(row, col int, direction int) (int, int) {
-	// 0 = up; 1 = right; 2 = down; 3 = left
+func (l LightContraption) AdvanceBeam(row, col int, direction int) {
 	switch direction {
-	case 0:
-		return row - 1, col
-	case 1:
-		return row, col + 1
-	case 2:
-		return row + 1, col
-	case 3:
-		return row, col - 1
+	case UP:
+		row--
+	case RIGHT:
+		col++
+	case DOWN:
+		row++
+	case LEFT:
+		col--
 	}
-	return 0, 0
+	l.BeamLight(row, col, direction)
 }
 
 func (l LightContraption) BeamLight(row, col int, direction int) {
@@ -52,57 +58,42 @@ func (l LightContraption) BeamLight(row, col int, direction int) {
 
 	switch l[row][col].tileType {
 	case '.':
-		newRow, newCol := AdjustVector(row, col, direction)
-		l.BeamLight(newRow, newCol, direction)
+		l.AdvanceBeam(row, col, direction)
 	case '-':
-		if direction%2 == 1 {
-			newRow, newCol := AdjustVector(row, col, direction)
-			l.BeamLight(newRow, newCol, direction)
+		if direction == LEFT || direction == RIGHT {
+			l.AdvanceBeam(row, col, direction)
 		} else {
-			newRow, newCol := AdjustVector(row, col, 1)
-			l.BeamLight(newRow, newCol, 1)
-			newRow, newCol = AdjustVector(row, col, 3)
-			l.BeamLight(newRow, newCol, 3)
+			l.AdvanceBeam(row, col, LEFT)
+			l.AdvanceBeam(row, col, RIGHT)
 		}
 	case '|':
-		if direction%2 == 0 {
-			newRow, newCol := AdjustVector(row, col, direction)
-			l.BeamLight(newRow, newCol, direction)
+		if direction == UP || direction == DOWN {
+			l.AdvanceBeam(row, col, direction)
 		} else {
-			newRow, newCol := AdjustVector(row, col, 0)
-			l.BeamLight(newRow, newCol, 0)
-			newRow, newCol = AdjustVector(row, col, 2)
-			l.BeamLight(newRow, newCol, 2)
+			l.AdvanceBeam(row, col, UP)
+			l.AdvanceBeam(row, col, DOWN)
 		}
 	case '/':
 		switch direction {
-		case 0:
-			newRow, newCol := AdjustVector(row, col, 1)
-			l.BeamLight(newRow, newCol, 1)
-		case 1:
-			newRow, newCol := AdjustVector(row, col, 0)
-			l.BeamLight(newRow, newCol, 0)
-		case 2:
-			newRow, newCol := AdjustVector(row, col, 3)
-			l.BeamLight(newRow, newCol, 3)
-		case 3:
-			newRow, newCol := AdjustVector(row, col, 2)
-			l.BeamLight(newRow, newCol, 2)
+		case UP:
+			l.AdvanceBeam(row, col, RIGHT)
+		case RIGHT:
+			l.AdvanceBeam(row, col, UP)
+		case DOWN:
+			l.AdvanceBeam(row, col, LEFT)
+		case LEFT:
+			l.AdvanceBeam(row, col, DOWN)
 		}
 	case '\\':
 		switch direction {
-		case 0:
-			newRow, newCol := AdjustVector(row, col, 3)
-			l.BeamLight(newRow, newCol, 3)
-		case 1:
-			newRow, newCol := AdjustVector(row, col, 2)
-			l.BeamLight(newRow, newCol, 2)
-		case 2:
-			newRow, newCol := AdjustVector(row, col, 1)
-			l.BeamLight(newRow, newCol, 1)
-		case 3:
-			newRow, newCol := AdjustVector(row, col, 0)
-			l.BeamLight(newRow, newCol, 0)
+		case UP:
+			l.AdvanceBeam(row, col, LEFT)
+		case RIGHT:
+			l.AdvanceBeam(row, col, DOWN)
+		case DOWN:
+			l.AdvanceBeam(row, col, RIGHT)
+		case LEFT:
+			l.AdvanceBeam(row, col, UP)
 		}
 	}
 }
@@ -123,13 +114,13 @@ func PrintContraption(l LightContraption) {
 				x = string(t.tileType)
 			case totalBeamed == 1:
 				switch {
-				case t.beamed[0]:
+				case t.beamed[UP]:
 					x = "^"
-				case t.beamed[1]:
+				case t.beamed[RIGHT]:
 					x = ">"
-				case t.beamed[2]:
+				case t.beamed[DOWN]:
 					x = "v"
-				case t.beamed[3]:
+				case t.beamed[LEFT]:
 					x = "<"
 				}
 			case totalBeamed > 1:
@@ -162,14 +153,13 @@ func (l LightContraption) Energy() (total int) {
 
 func part1Handler(input []string) int {
 	l := Load(input)
-	l.BeamLight(0, 0, 1)
+	l.BeamLight(0, 0, RIGHT)
 	return l.Energy()
 }
 
 func part2Handler(input []string) (total int) {
-	// bare := Load(input)
 	for x := 0; x < len(input); x++ {
-		for _, y := range [2][2]int{{0, 1}, {len(input[0]) - 1, 3}} {
+		for _, y := range [2][2]int{{0, RIGHT}, {len(input[0]) - 1, LEFT}} {
 			l := Load(input)
 			l.BeamLight(x, y[0], y[1])
 			e := l.Energy()
@@ -179,7 +169,7 @@ func part2Handler(input []string) (total int) {
 		}
 	}
 	for y := 0; y < len(input[0]); y++ {
-		for _, x := range [2][2]int{{0, 2}, {len(input) - 1, 0}} {
+		for _, x := range [2][2]int{{0, DOWN}, {len(input) - 1, UP}} {
 			l := Load(input)
 			l.BeamLight(x[0], y, x[1])
 			e := l.Energy()
